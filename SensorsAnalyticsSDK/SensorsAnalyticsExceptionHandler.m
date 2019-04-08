@@ -169,6 +169,8 @@ static void SAHandleException(NSException *exception) {
             if (![instance isAutoTrackEventTypeIgnored:SensorsAnalyticsEventTypeAppEnd]) {
                 [instance track:@"$AppEnd" withTrackType:SensorsAnalyticsTrackTypeAuto];
             }
+
+            //郑卓源添加修改debug_mode，然后马上刷缓存
             
             dispatch_sync(instance.serialQueue, ^{
                 

@@ -1,0 +1,27 @@
+﻿SensorsData ios SDK修改记录
+1.需要改SensorsAnalyticsSDK.m文件_flush函数的加密数据，实现代码在内函数^flushByPost
+2.setServerUrl函数 ok
+3.flushByType函数执行getFirstRecords，从数据库读取记录的
+4.改dcsuri赋值 ok
+
+修改计划
+1.加Server_Mode ok
+
+2.AppCrash后修改debug_mode，然后马上刷缓存 no了
+[handler sa_handleUncaughtException:exception];
+
+
+3.增加测试设备id ok了
+getUniqueHardwareId
+
+
+4.改了JSONUtil.m文件，添加函数 ok
+
+5.加了函数flushByPost2SDC ok
+
+6.ua赋值 ok
+[request setValue:@"SensorsAnalytics iOS SDK" forHTTPHeaderField:@"User-Agent"];
+
+7.debugOnly情况下不发送到服务器  ok
+if (self->_debugMode == SensorsAnalyticsDebugOnly) {.
+            [request setValue:@"true" forHTTPHeaderField:@"Dry-Run"];

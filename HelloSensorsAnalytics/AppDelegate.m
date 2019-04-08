@@ -11,6 +11,7 @@
 #import "SAAppExtensionDataManager.h"
 
 static NSString* Sa_Default_ServerURL = @"http://sdk-test.cloud.sensorsdata.cn:8006/sa?project=default&token=95c73ae661f85aa0";
+static NSString* Ws_Default_ServerURL = @"http://39.98.54.111/v1/dcswcnkzxnfh0s7va5rka761k_7e9y/events.svc";
 
 @interface AppDelegate ()
 
@@ -20,8 +21,20 @@ static NSString* Sa_Default_ServerURL = @"http://sdk-test.cloud.sensorsdata.cn:8
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
  
-    SAConfigOptions *options = [[SAConfigOptions alloc] initWithServerURL:Sa_Default_ServerURL launchOptions:launchOptions];
-    [SensorsAnalyticsSDK sharedInstanceWithConfig:options];
+    [SensorsAnalyticsSDK sharedInstanceWithServerURL:Ws_Default_ServerURL
+                                    andLaunchOptions:launchOptions
+                                    andDebugMode:SensorsAnalyticsDebugAndTrack];
+    // 设置公共属性
+    // [[SensorsAnalyticsSDK sharedInstance] registerSuperProperties:@{@"appName": @"HelloSensorsAnalytics"}];
+    // 追踪激活事件，详见：https://sensorsdata.cn/manual/app_channel_tracking.html
+    [[SensorsAnalyticsSDK sharedInstance] trackInstallation:@"AppInstall" withProperties:@{@"testValue" : @"testKey"}];
+    // 打开自动采集, 并指定追踪哪些 AutoTrack 事件
+    [[SensorsAnalyticsSDK sharedInstance] enableAutoTrack:SensorsAnalyticsEventTypeAppStart|
+     SensorsAnalyticsEventTypeAppEnd|
+     SensorsAnalyticsEventTypeAppViewScreen|
+     SensorsAnalyticsEventTypeAppClick];
+    // 打通 App 与 H5，详见：https://sensorsdata.cn/manual/app_h5.html
+    [[SensorsAnalyticsSDK sharedInstance] addWebViewUserAgentSensorsDataFlag];
 
     [[SensorsAnalyticsSDK sharedInstance] registerSuperProperties:@{@"AAA":UIDevice.currentDevice.identifierForVendor.UUIDString}];
     [[SensorsAnalyticsSDK sharedInstance] registerDynamicSuperProperties:^NSDictionary * _Nonnull{
@@ -42,7 +55,6 @@ static NSString* Sa_Default_ServerURL = @"http://sdk-test.cloud.sensorsdata.cn:8
     [[SensorsAnalyticsSDK sharedInstance] setMaxCacheSize:20000];
     [[SensorsAnalyticsSDK sharedInstance] enableHeatMap];
     [[SensorsAnalyticsSDK sharedInstance] addWebViewUserAgentSensorsDataFlag];
-    [[SensorsAnalyticsSDK sharedInstance] trackInstallation:@"AppInstall" withProperties:@{@"testValue" : @"testKey"}];
     //[[SensorsAnalyticsSDK sharedInstance] addHeatMapViewControllers:[NSArray arrayWithObject:@"DemoController"]];
     [[SensorsAnalyticsSDK sharedInstance] trackAppCrash];
     [[SensorsAnalyticsSDK sharedInstance] setFlushNetworkPolicy:SensorsAnalyticsNetworkTypeALL];

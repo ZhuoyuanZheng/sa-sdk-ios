@@ -27,4 +27,11 @@
  */
 - (id) init;
 
+/**
+ *
+ */
+- (NSDictionary *)dictionaryWithJsonString:(NSString *)jsonString;
+
+- (NSString *)stringFormDict:(NSDictionary*)dict;
+- (NSString *)stringFormDict:(NSDictionary*)dict andFN:(NSString*)fatherName;
 @end
