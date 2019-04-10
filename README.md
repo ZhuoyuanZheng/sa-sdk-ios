@@ -1,6 +1,6 @@
 # Sensors Analytics
 
-This is 3th party iOS SDK for Sensors Analytics.
+This is a 3th party iOS SDK for Sensors Analytics.
 
 ## Easy Installation
 
