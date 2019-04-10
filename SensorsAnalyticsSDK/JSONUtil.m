@@ -117,4 +117,85 @@
     return s;
 }
 
+/**
+ * 把json字符串转换成字典
+ *
+ * @param jsonString 要转换的json字符串
+ *
+ * @return 字典对象
+ */
+- (NSDictionary *)dictionaryWithJsonString:(NSString *)jsonString
+{
+    if (jsonString == nil) {
+        return nil;
+    }
+    
+    NSData *jsonData = [jsonString dataUsingEncoding:NSUTF8StringEncoding];
+    NSError *err;
+    NSDictionary *dic = [NSJSONSerialization JSONObjectWithData:jsonData
+                                                        options:NSJSONReadingMutableContainers
+                                                          error:&err];
+    if(err)
+    {
+        NSLog(@"json解析失败：%@",err);
+        return nil;
+    }
+    return dic;
+}
+
+/**
+ * 把多层叠字典转成扁平的jsong字符串
+ *
+ * @param dict 要转换的字典
+ *
+ * @return 字符串
+ */
+- (NSString *)stringFormDict:(NSDictionary*)dict
+{
+    NSMutableString *str = [NSMutableString string];
+    NSArray *keys = [dict allKeys];
+    for (NSString *key in keys) {
+        if ([[dict objectForKey:key] isKindOfClass:[NSDictionary class]]) {
+            id obj = [dict objectForKey:key];
+            [str appendFormat:@"%@",[self stringFormDict:obj andFN:key]];
+        }else if ([[dict objectForKey:key] isKindOfClass:[NSArray class]]){
+            [str appendFormat:@"&%@=",key];
+            for (id obj in [dict objectForKey:key]) {
+                [str appendFormat:@"%@;",[self stringFormDict:obj]];
+            }
+        }else{
+            [str appendFormat:@"&%@=%@",key,[dict objectForKey:key]];
+        }
+    }
+    return str;
+}
+
+/**
+ * 把多层叠字典转成扁平的jsong字符串
+ *
+ * @param dict 要转换的字典
+ * @param fatherName 父对象名称
+ *
+ * @return 字符串
+ */
+- (NSString *)stringFormDict:(NSDictionary*)dict andFN:(NSString*)fatherName
+{
+    NSMutableString *str = [NSMutableString string];
+    NSArray *keys = [dict allKeys];
+    for (NSString *key in keys) {
+        if ([[dict objectForKey:key] isKindOfClass:[NSDictionary class]]) {
+            id obj = [dict objectForKey:key];
+            [str appendFormat:@"%@",[self stringFormDict:obj andFN:key]];
+        }else if ([[dict objectForKey:key] isKindOfClass:[NSArray class]]){
+            [str appendFormat:@"&%@.%@=",fatherName,key];
+            for (id obj in [dict objectForKey:key]) {
+                [str appendFormat:@"%@;",[self stringFormDict:obj]];
+            }
+        }else{
+            [str appendFormat:@"&%@.%@=%@",fatherName,key,[dict objectForKey:key]];
+        }
+    }
+    return str;
+}
+
 @end

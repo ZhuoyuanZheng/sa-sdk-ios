@@ -27,4 +27,31 @@
  */
 - (id) init;
 
+/**
+ * 把json字符串转换成字典
+ *
+ * @param jsonString 要转换的json字符串
+ *
+ * @return 字典对象
+ */
+- (NSDictionary *)dictionaryWithJsonString:(NSString *)jsonString;
+
+/**
+ * 把多层叠字典转成扁平的jsong字符串
+ *
+ * @param dict 要转换的字典
+ *
+ * @return 字符串
+ */
+- (NSString *)stringFormDict:(NSDictionary*)dict;
+	
+/**
+ * 把多层叠字典转成扁平的jsong字符串
+ *
+ * @param dict 要转换的字典
+ * @param fatherName 父对象名称
+ *
+ * @return 字符串
+ */
+- (NSString *)stringFormDict:(NSDictionary*)dict andFN:(NSString*)fatherName;
 @end

@@ -11,13 +11,6 @@ This is the official iOS SDK for Sensors Analytics.
 ```
   3. Run `pod install` in the Xcode project directory and restart XCode.
 
-## To learn more
-
-See our [full manual](http://www.sensorsdata.cn/manual/ios_sdk.html) 
-
-或者加入 QQ 讨论群：<br>
-![ QQ 讨论群](screenshots/qrCode.jpeg)
-
 ## 感谢
 [mixpanel-iphone](https://github.com/mixpanel/mixpanel-iphone) 
 

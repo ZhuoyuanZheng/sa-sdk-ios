@@ -51,7 +51,7 @@
 #import "SensorsAnalyticsSDK+Private.h"
 #import "SAAlertController.h"
 
-#define VERSION @"1.10.24"
+#define VERSION @"1.10.24a"
 
 static NSUInteger const SA_PROPERTY_LENGTH_LIMITATION = 8191;
 
@@ -235,6 +235,7 @@ static SensorsAnalyticsSDK *sharedInstance = nil;
 
 @implementation SensorsAnalyticsSDK {
     SensorsAnalyticsDebugMode _debugMode;
+    ServerMode _serverMode;
     UInt64 _flushBulkSize;
     UInt64 _flushInterval;
     UInt64 _maxCacheSize;
@@ -551,21 +552,34 @@ static SensorsAnalyticsSDK *sharedInstance = nil;
 
 - (void)setServerUrl:(NSString *)serverUrl {
     _originServerUrl = serverUrl;
-    if (serverUrl == nil || [serverUrl length] == 0 || _debugMode == SensorsAnalyticsDebugOff) {
+    /**
+     *郑卓源添加
+     */
+    if([serverUrl rangeOfString:@"/events.svc"].length!=0){
         _serverURL = serverUrl;
-    } else {
-        // 将 Server URI Path 替换成 Debug 模式的 '/debug'
-        NSURL *tempBaseUrl = [NSURL URLWithString:serverUrl];
-        if (tempBaseUrl.lastPathComponent.length > 0) {
-            tempBaseUrl = [tempBaseUrl URLByDeletingLastPathComponent];
+        _serverMode = SDC_SERVER;
+        NSString *link=([serverUrl rangeOfString:@"?"].length>0)?@"&":@"?";;
+        NSString *d=(_debugMode == SensorsAnalyticsDebugAndTrack)?@"true":@"false";
+        [_serverURL stringByAppendingFormat:@"%@dcsverbose=%@",link,d];
+    }//郑卓源
+    else{
+        if (serverUrl == nil || [serverUrl length] == 0 || _debugMode == SensorsAnalyticsDebugOff) {
+            _serverURL = serverUrl;
+        } else {
+            // 将 Server URI Path 替换成 Debug 模式的 '/debug'
+            NSURL *tempBaseUrl = [NSURL URLWithString:serverUrl];
+            if (tempBaseUrl.lastPathComponent.length > 0) {
+                tempBaseUrl = [tempBaseUrl URLByDeletingLastPathComponent];
+            }
+            NSURL *url = [tempBaseUrl URLByAppendingPathComponent:@"debug"];
+            NSString *host = url.host;
+            if ([host rangeOfString:@"_"].location != NSNotFound) { //包含下划线日志提示
+                NSString * referenceUrl = @"https://en.wikipedia.org/wiki/Hostname";
+                SALog(@"Server url:%@ contains '_'  is not recommend,see details:%@",serverUrl,referenceUrl);
+            }
+            _serverURL = [url absoluteString];
         }
-        NSURL *url = [tempBaseUrl URLByAppendingPathComponent:@"debug"];
-        NSString *host = url.host;
-        if ([host rangeOfString:@"_"].location != NSNotFound) { //包含下划线日志提示
-            NSString * referenceUrl = @"https://en.wikipedia.org/wiki/Hostname";
-            SALog(@"Server url:%@ contains '_'  is not recommend,see details:%@",serverUrl,referenceUrl);
-        }
-        _serverURL = [url absoluteString];
+        _serverMode = SENSORS_SERVER;
     }
 }
 
@@ -1339,6 +1353,7 @@ static SensorsAnalyticsSDK *sharedInstance = nil;
     if (!([self toNetworkType:networkType] & _networkTypePolicy)) {
         return;
     }
+    
     // 使用 Post 发送数据
     BOOL (^flushByPost)(NSArray *, NSString *) = ^(NSArray *recordArray, NSString *type) {
         NSString *jsonString;
@@ -1346,6 +1361,7 @@ static SensorsAnalyticsSDK *sharedInstance = nil;
         NSString *b64String;
         NSString *postBody;
         @try {
+
             // 1. 先完成这一系列Json字符串的拼接
             jsonString = [NSString stringWithFormat:@"[%@]",[recordArray componentsJoinedByString:@","]];
             // 2. 使用gzip进行压缩
@@ -1360,6 +1376,7 @@ static SensorsAnalyticsSDK *sharedInstance = nil;
                                                                                       kCFStringEncodingUTF8));
 
             postBody = [NSString stringWithFormat:@"crc=%d&gzip=1&data_list=%@", hashCode, b64String];
+            
         } @catch (NSException *exception) {
             SAError(@"%@ flushByPost format data error: %@", self, exception);
             return YES;
@@ -1427,7 +1444,7 @@ static SensorsAnalyticsSDK *sharedInstance = nil;
 
             dispatch_semaphore_signal(flushSem);
         };
-
+        
         NSURLSession *session = [NSURLSession sharedSession];
         NSURLSessionDataTask *task = [session dataTaskWithRequest:request completionHandler:block];
         [task resume];
@@ -1437,14 +1454,134 @@ static SensorsAnalyticsSDK *sharedInstance = nil;
         return flushSucc;
     };
     
-    [self flushByType:@"Post" withSize:(_debugMode == SensorsAnalyticsDebugOff ? 50 : 1) andFlushMethod:flushByPost];
+    // 使用 Post 发送数据到sdc
+    BOOL (^flushByPost2Sdc)(NSArray *, NSString *) = ^(NSArray *recordArray, NSString *type) {
+        NSString *postBody;
+        NSDictionary *dict;
+        __block BOOL flushSucc = YES;
+        for(int i=0;i<recordArray.count;i++){
+            @try {
+                // 郑卓源修改这里
+                JSONUtil *jsonUtil = [[JSONUtil alloc] init];
+                dict = [jsonUtil dictionaryWithJsonString:recordArray[i]];
+                if(![dict objectForKey:@"dcsuri"]){
+                    NSString *ev = [dict objectForKey:@"event"];
+                    if(!ev)
+                        [dict setValue:@"/" forKey:@"dcsuri"];
+                    else if([ev isEqualToString:@"$AppViewScreen"]||[ev isEqualToString:@"$AppClick"]){
+                        NSString *uri=@"";
+                        if([[dict objectForKey:@"properties"] objectForKey:@"$screen_name"]){
+                           uri=[uri stringByAppendingString:[[dict objectForKey:@"properties"] objectForKey:@"$screen_name"]];
+                        }
+                        if([dict objectForKey:@"event"]){
+                            uri=[uri stringByAppendingFormat:@"%@/",[dict objectForKey:@"event"]];
+                        }
+                        if([[dict objectForKey:@"properties"] objectForKey:@"$element_content"]){
+                            uri=[uri stringByAppendingString:[[dict objectForKey:@"properties"] objectForKey:@"$element_content"]];
+                        }
+                        else if([[dict objectForKey:@"properties"] objectForKey:@"$element_id"]){
+                            uri=[uri stringByAppendingString:[[dict objectForKey:@"properties"] objectForKey:@"$element_id"]];
+                        }
+                        [dict setValue:uri forKey:@"dcsuri"];
+                    }
+                    else{
+                        [dict setValue:ev forKey:@"dcsuri"];
+                    }
+                }
+                postBody = [jsonUtil stringFormDict:dict];
+    //            SALog(postBody);
+                //zzy
+                
+            } @catch (NSException *exception) {
+                SAError(@"%@ flushByPost format data error: %@", self, exception);
+                return YES;
+            }
+            
+            NSURL *url = [NSURL URLWithString:self.serverURL];
+            NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
+            request.timeoutInterval = 30;
+            [request setHTTPMethod:@"POST"];
+            [request setHTTPBody:[postBody dataUsingEncoding:NSUTF8StringEncoding]];
+            if (self->_debugMode == SensorsAnalyticsDebugOnly) {
+                return flushSucc;
+            }
+            
+            if([[dict objectForKey:@"event"] isEqualToString:@"$AppStart"]){
+                [request setValue:self.class.getUserAgent forHTTPHeaderField:@"User-Agent"];
+            }else [request setValue:@"-" forHTTPHeaderField:@"User-Agent"];
+            
+            //Cookie
+            [request setValue:[[SensorsAnalyticsSDK sharedInstance] getCookieWithDecode:NO] forHTTPHeaderField:@"Cookie"];
+            
+            dispatch_semaphore_t flushSem = dispatch_semaphore_create(0);
+            
+            void (^block)(NSData*, NSURLResponse*, NSError*) = ^(NSData *data, NSURLResponse *response, NSError *error) {
+                if (error || ![response isKindOfClass:[NSHTTPURLResponse class]]) {
+                    SAError(@"%@", [NSString stringWithFormat:@"%@ network failure: %@", self, error ? error : @"Unknown error"]);
+                    flushSucc = NO;
+                    dispatch_semaphore_signal(flushSem);
+                    return;
+                }
+                
+                NSHTTPURLResponse *urlResponse = (NSHTTPURLResponse*)response;
+                NSString *urlResponseContent = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+                NSString *errMsg = [NSString stringWithFormat:@"%@ flush failure with response '%@'.", self, urlResponseContent];
+                NSString *messageDesc = nil;
+                NSInteger statusCode = urlResponse.statusCode;
+                if(statusCode != 200) {
+                    messageDesc = @"\n【invalid message】\n";
+                    if (self->_debugMode != SensorsAnalyticsDebugOff) {
+                        if (statusCode >= 300) {
+                            [self showDebugModeWarning:errMsg withNoMoreButton:YES];
+                        }
+                    } else {
+                        if (statusCode >= 300) {
+                            flushSucc = NO;
+                        }
+                    }
+                } else {
+                    messageDesc = @"\n【valid message】\n";
+                }
+                SAError(@"==========================================================================");
+                if ([SALogger isLoggerEnabled]) {
+                    @try {
+    //                    NSData *jsonData = [jsonString dataUsingEncoding:NSUTF8StringEncoding];
+    //                    NSDictionary *dict = [NSJSONSerialization JSONObjectWithData:jsonData options:NSJSONReadingMutableContainers error:nil];
+                        NSString *logString=[[NSString alloc] initWithData:[NSJSONSerialization dataWithJSONObject:dict options:NSJSONWritingPrettyPrinted error:nil] encoding:NSUTF8StringEncoding];
+                        SAError(@"%@ %@: %@", self,messageDesc,logString);
+                    } @catch (NSException *exception) {
+                        SAError(@"%@: %@", self, exception);
+                    }
+                }
+                if (statusCode != 200) {
+                    SAError(@"%@ ret_code: %ld", self, statusCode);
+                    SAError(@"%@ ret_content: %@", self, urlResponseContent);
+                }
+                
+                dispatch_semaphore_signal(flushSem);
+            };
+            
+            NSURLSession *session = [NSURLSession sharedSession];
+            NSURLSessionDataTask *task = [session dataTaskWithRequest:request completionHandler:block];
+            [task resume];
+            
+            dispatch_semaphore_wait(flushSem, DISPATCH_TIME_FOREVER);
+        }
+        return flushSucc;
+    };
+    
+    //郑卓源修改
+    if(_serverMode==SENSORS_SERVER)
+        [self flushByType:@"Post" withSize:(_debugMode == SensorsAnalyticsDebugOff ? 50 : 1) andFlushMethod:flushByPost];
+    else if(_serverMode==SDC_SERVER)
+        [self flushByType:@"Post" withSize:(_debugMode == SensorsAnalyticsDebugOff ? 1 : 1) andFlushMethod:flushByPost2Sdc];
 
     if (vacuumAfterFlushing) {
         if (![self.messageQueue vacuum]) {
             SAError(@"failed to VACUUM SQLite.");
         }
     }
-
+    
     SADebug(@"events flushed.");
 }
 
@@ -2376,11 +2513,13 @@ static SensorsAnalyticsSDK *sharedInstance = nil;
     CTTelephonyNetworkInfo *telephonyInfo = [[CTTelephonyNetworkInfo alloc] init];
     CTCarrier *carrier = nil;
     
-    if (@available(iOS 12.0, *)) {
+    //郑卓源修改
+    Boolean iOS12 = (@available(iOS 12.0, *))?true:false;
+#if iOS12
         carrier = telephonyInfo.serviceSubscriberCellularProviders.allValues.lastObject;
-    } else {
+#else
         carrier = telephonyInfo.subscriberCellularProvider;
-    }
+#endif
 
     // Use setValue semantics to avoid adding keys where value can be nil.
     [p setValue:[[NSBundle mainBundle] infoDictionary][@"CFBundleShortVersionString"] forKey:SA_EVENT_COMMON_PROPERTY_APP_VERSION];
@@ -2441,6 +2580,11 @@ static SensorsAnalyticsSDK *sharedInstance = nil;
 #if !SENSORS_ANALYTICS_DISABLE_AUTOTRACK_DEVICEID
     [p setValue:[[self class] getUniqueHardwareId] forKey:SA_EVENT_COMMON_PROPERTY_DEVICE_ID];
 #endif
+    /*/郑卓源添加代码，增加调试设备
+    if([[[self class] getUniqueHardwareId] isEqualToString:@"BF33200C-F1F1-4C6A-B00A-415CBDE4BB88"])
+    {
+        [self setDebugMode:(SensorsAnalyticsDebugAndTrack)];
+    }*/
     [p addEntriesFromDictionary:@{
                                   SA_EVENT_COMMON_PROPERTY_LIB: @"iOS",
                                   SA_EVENT_COMMON_PROPERTY_LIB_VERSION: [self libVersion],
@@ -2699,11 +2843,14 @@ static SensorsAnalyticsSDK *sharedInstance = nil;
             if (!netinfo) {
                 netinfo = [[CTTelephonyNetworkInfo alloc] init];
             }
-            if (@available(iOS 12.0, *)) {
-                currentRadioAccessTechnology = netinfo.serviceCurrentRadioAccessTechnology.allValues.lastObject;
-            } else {
-                currentRadioAccessTechnology = netinfo.currentRadioAccessTechnology;
-            }
+            
+            //郑卓源修改
+            Boolean iOS12 = (@available(iOS 12.0, *))?true:false;
+#if iOS12
+            currentRadioAccessTechnology = netinfo.serviceCurrentRadioAccessTechnology.allValues.lastObject;
+#else
+            currentRadioAccessTechnology = netinfo.currentRadioAccessTechnology;
+#endif
             
             if ([currentRadioAccessTechnology isEqualToString:CTRadioAccessTechnologyGPRS]) {
                 network = @"2G";

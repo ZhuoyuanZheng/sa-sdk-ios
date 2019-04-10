@@ -80,6 +80,23 @@ typedef NS_ENUM(NSInteger, SensorsAnalyticsDebugMode) {
 
 /**
  * @abstract
+ * Server 模式，设置采集服务器版本, 郑卓源添加
+ *
+ * @discussion
+ *
+ * Server模式有三种选项:
+ *   SENSORS_SERVER - SA云服务器
+ *   SDC_SERVER - 自建SDC服务器
+ *   FLUME_SERVER - 自建Flume服务器
+ */
+typedef NS_ENUM(NSInteger, ServerMode) {
+    SENSORS_SERVER,
+    SDC_SERVER,
+    FLUME_SERVER,
+};
+
+/**
+ * @abstract
  * TrackTimer 接口的时间单位。调用该接口时，传入时间单位，可以设置 event_duration 属性的时间单位。
  *
  * @discuss
