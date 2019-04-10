@@ -7,9 +7,10 @@ This is 3th party iOS SDK for Sensors Analytics.
   1. Install [CocosPod](http://cocoapods.org/)
   2. Create a file named `Podfile` in your Xcode project and add the following line:
 ```
-    pod `SensorsAnalyticsSDK`
+    pod `AppSightsAnalyticsSDK`,'~>1.10.24a'
 ```
   3. Run `pod install` in the Xcode project directory and restart XCode.
+
 
 ## 感谢
 [mixpanel-iphone](https://github.com/mixpanel/mixpanel-iphone) 
