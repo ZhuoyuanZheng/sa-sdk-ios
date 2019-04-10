@@ -1570,11 +1570,16 @@ static SensorsAnalyticsSDK *sharedInstance = nil;
         return flushSucc;
     };
     
+<<<<<<< HEAD
     //郑卓源修改
     if(_serverMode==SENSORS_SERVER)
         [self flushByType:@"Post" withSize:(_debugMode == SensorsAnalyticsDebugOff ? 50 : 1) andFlushMethod:flushByPost];
     else if(_serverMode==SDC_SERVER)
         [self flushByType:@"Post" withSize:(_debugMode == SensorsAnalyticsDebugOff ? 1 : 1) andFlushMethod:flushByPost2Sdc];
+=======
+//    [self flushByType:@"Post" withSize:(_debugMode == SensorsAnalyticsDebugOff ? 1 : 1) andFlushMethod:flushByPost];
+    [self flushByType:@"Post" withSize:(_debugMode == SensorsAnalyticsDebugOff ? 1 : 1) andFlushMethod:flushByPost2Sdc];
+>>>>>>> 8ffb2093a778c09a5645ca7d561ab18b0bf316eb
 
     if (vacuumAfterFlushing) {
         if (![self.messageQueue vacuum]) {
@@ -2513,11 +2518,17 @@ static SensorsAnalyticsSDK *sharedInstance = nil;
     CTTelephonyNetworkInfo *telephonyInfo = [[CTTelephonyNetworkInfo alloc] init];
     CTCarrier *carrier = nil;
     
+<<<<<<< HEAD
     //郑卓源修改
     Boolean iOS12 = (@available(iOS 12.0, *))?true:false;
 #if iOS12
         carrier = telephonyInfo.serviceSubscriberCellularProviders.allValues.lastObject;
 #else
+=======
+    if (@available(iOS 12.0, *)) {
+//        carrier = telephonyInfo.serviceSubscriberCellularProviders.allValues.lastObject;
+    } else {
+>>>>>>> 8ffb2093a778c09a5645ca7d561ab18b0bf316eb
         carrier = telephonyInfo.subscriberCellularProvider;
 #endif
 
@@ -2843,6 +2854,7 @@ static SensorsAnalyticsSDK *sharedInstance = nil;
             if (!netinfo) {
                 netinfo = [[CTTelephonyNetworkInfo alloc] init];
             }
+<<<<<<< HEAD
             
             //郑卓源修改
             Boolean iOS12 = (@available(iOS 12.0, *))?true:false;
@@ -2851,6 +2863,13 @@ static SensorsAnalyticsSDK *sharedInstance = nil;
 #else
             currentRadioAccessTechnology = netinfo.currentRadioAccessTechnology;
 #endif
+=======
+            if (@available(iOS 12.0, *)) {
+//                currentRadioAccessTechnology = netinfo.serviceCurrentRadioAccessTechnology.allValues.lastObject;
+            } else {
+                currentRadioAccessTechnology = netinfo.currentRadioAccessTechnology;
+            }
+>>>>>>> 8ffb2093a778c09a5645ca7d561ab18b0bf316eb
             
             if ([currentRadioAccessTechnology isEqualToString:CTRadioAccessTechnologyGPRS]) {
                 network = @"2G";

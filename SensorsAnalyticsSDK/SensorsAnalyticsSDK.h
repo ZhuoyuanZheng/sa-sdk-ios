@@ -80,7 +80,11 @@ typedef NS_ENUM(NSInteger, SensorsAnalyticsDebugMode) {
 
 /**
  * @abstract
+<<<<<<< HEAD
  * Server 模式，设置采集服务器版本, 郑卓源添加
+=======
+ * Server 模式，设置采集服务器版本
+>>>>>>> 8ffb2093a778c09a5645ca7d561ab18b0bf316eb
  *
  * @discussion
  *

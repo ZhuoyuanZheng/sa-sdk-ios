@@ -28,6 +28,7 @@
 - (id) init;
 
 /**
+<<<<<<< HEAD
  * 把json字符串转换成字典
  *
  * @param jsonString 要转换的json字符串
@@ -53,5 +54,12 @@
  *
  * @return 字符串
  */
+=======
+ *
+ */
+- (NSDictionary *)dictionaryWithJsonString:(NSString *)jsonString;
+
+- (NSString *)stringFormDict:(NSDictionary*)dict;
+>>>>>>> 8ffb2093a778c09a5645ca7d561ab18b0bf316eb
 - (NSString *)stringFormDict:(NSDictionary*)dict andFN:(NSString*)fatherName;
 @end

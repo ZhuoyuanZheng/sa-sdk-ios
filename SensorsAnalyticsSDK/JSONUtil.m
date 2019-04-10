@@ -117,6 +117,7 @@
     return s;
 }
 
+<<<<<<< HEAD
 /**
  * 把json字符串转换成字典
  *
@@ -124,6 +125,9 @@
  *
  * @return 字典对象
  */
+=======
+
+>>>>>>> 8ffb2093a778c09a5645ca7d561ab18b0bf316eb
 - (NSDictionary *)dictionaryWithJsonString:(NSString *)jsonString
 {
     if (jsonString == nil) {
@@ -143,6 +147,7 @@
     return dic;
 }
 
+<<<<<<< HEAD
 /**
  * 把多层叠字典转成扁平的jsong字符串
  *
@@ -150,6 +155,8 @@
  *
  * @return 字符串
  */
+=======
+>>>>>>> 8ffb2093a778c09a5645ca7d561ab18b0bf316eb
 - (NSString *)stringFormDict:(NSDictionary*)dict
 {
     NSMutableString *str = [NSMutableString string];
@@ -170,6 +177,7 @@
     return str;
 }
 
+<<<<<<< HEAD
 /**
  * 把多层叠字典转成扁平的jsong字符串
  *
@@ -178,6 +186,8 @@
  *
  * @return 字符串
  */
+=======
+>>>>>>> 8ffb2093a778c09a5645ca7d561ab18b0bf316eb
 - (NSString *)stringFormDict:(NSDictionary*)dict andFN:(NSString*)fatherName
 {
     NSMutableString *str = [NSMutableString string];
